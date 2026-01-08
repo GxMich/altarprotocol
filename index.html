@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ALTARPROTOCOL</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+
+    <style>
+        /* --- 1. THEME ENGINE --- */
+        :root {
+            /* Dark Mode (Default) */
+            --bg: #050505;
+            --surface: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent: #00f2ff; /* Cyan Elettrico */
+            --accent-glow: rgba(0, 242, 255, 0.2);
+            --dock-bg: rgba(15, 15, 15, 0.9);
+            --input-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="light"] {
+            /* Light Mode */
+            --bg: #f2f2f7;
+            --surface: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
+            --text-main: #000000;
+            --text-muted: #888888;
+            --accent: #5856D6; /* Deep Purple */
+            --accent-glow: rgba(88, 86, 214, 0.2);
+            --dock-bg: rgba(255, 255, 255, 0.85);
+            --input-bg: rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- 2. BASE STYLES --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            margin: 0; background: var(--bg); color: var(--text-main);
+            font-family: 'Inter', sans-serif; transition: background 0.5s ease, color 0.5s ease;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; padding-bottom: 240px; overflow-x: hidden;
+        }
+
+        /* Sfondo Ambientale */
+        .mesh {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
+            background: radial-gradient(circle at 50% -20%, var(--accent-glow), transparent 70%);
+            opacity: 0.5; transition: 0.5s;
+        }
+
+        /* --- 3. UI COMPONENTS --- */
+        .top-bar {
+            position: fixed; top: 20px; right: 20px; z-index: 50; display: flex; gap: 10px;
+        }
+        .icon-btn {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: var(--surface); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); color: var(--text-main);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .icon-btn:active { transform: scale(0.9); }
+
+        header { padding: 100px 20px 40px; text-align: center; width: 100%; max-width: 700px; }
+        
+        #master-title {
+            font-size: clamp(2.5rem, 9vw, 5rem); font-weight: 900; letter-spacing: -0.04em;
+            line-height: 0.95; margin: 0; text-transform: uppercase; transition: color 0.3s;
+        }
+
+        .meta-badge {
+            display: inline-flex; align-items: center; gap: 8px; margin-top: 25px;
+            padding: 8px 16px; border-radius: 100px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent);
+        }
+        .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
+
+        /* LISTA LEADERBOARD */
+        .stack { width: 92%; max-width: 500px; display: flex; flex-direction: column; gap: 12px; }
+
+        .card {
+            background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 18px; padding: 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; position: relative; overflow: hidden;
+            transition: transform 0.2s, background 0.3s;
+        }
+        .card:active { transform: scale(0.98); }
+
+        /* Il primo in classifica */
+        .card.rank-1 {
+            border-color: var(--accent);
+            background: linear-gradient(90deg, var(--accent-glow) 0%, transparent 100%);
+        }
+        .card.rank-1::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent);
+        }
+
+        .rank-num { font-family: 'JetBrains Mono'; font-weight: 700; width: 35px; color: var(--text-muted); }
+        .rank-1 .rank-num { color: var(--accent); }
+        .info { flex: 1; }
+        .name { font-weight: 700; font-size: 1.1rem; }
+        .amount { font-family: 'JetBrains Mono'; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+        .rank-1 .amount { color: var(--accent); }
+
+        /* DOCK COMANDI */
+        .dock {
+            position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+            width: 92%; max-width: 420px;
+            background: var(--dock-bg); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--border); border-radius: 28px; padding: 12px;
+            display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 100;
+        }
+
+        .inputs-group { display: flex; gap: 8px; }
+        
+        input {
+            background: var(--input-bg); border: none; border-radius: 14px;
+            padding: 14px; color: var(--text-main); font-family: 'Inter', sans-serif;
+            font-size: 0.95rem; outline: none; width: 100%; transition: 0.2s;
+        }
+        input::placeholder { color: var(--text-muted); opacity: 0.7; }
+        input:focus { background: var(--surface); box-shadow: 0 0 0 2px var(--accent); }
+
+        .action-btn {
+            background: var(--text-main); color: var(--bg); border: none; border-radius: 16px;
+            padding: 16px; font-weight: 900; font-family: 'Inter'; letter-spacing: 0.5px;
+            cursor: pointer; text-transform: uppercase; transition: 0.2s;
+        }
+        .action-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+        /* MODALS */
+        #story-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        #story-img { width: 85%; max-width: 350px; border-radius: 20px; box-shadow: 0 0 50px var(--accent-glow); }
+        .close-hint { margin-top: 20px; color: #fff; font-family: 'JetBrains Mono'; font-size: 0.8rem; opacity: 0.5; }
+
+        /* PRIVACY BANNER */
+        #cookie-banner {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 500px;
+            background: var(--surface); backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 15px; font-size: 0.8rem; color: var(--text-muted);
+            display: none; justify-content: space-between; align-items: center; z-index: 1000;
+        }
+        #cookie-btn {
+            background: var(--accent); color: var(--bg); border: none; 
+            padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+
+        .footer-info {
+            position: fixed; bottom: 10px; width: 100%; text-align: center;
+            font-size: 0.6rem; color: var(--text-muted); opacity: 0.5; pointer-events: none;
+            font-family: 'JetBrains Mono';
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mesh"></div>
+
+    <div class="top-bar">
+        <div class="icon-btn" onclick="app.toggleLang()" id="lang-icon">IT</div>
+        <div class="icon-btn" onclick="app.toggleTheme()" id="theme-icon">☀</div>
+    </div>
+
+    <header>
+        <h1 id="master-title">SYSTEM OFFLINE</h1>
+        <div class="meta-badge">
+            <div class="dot"></div>
+            <span id="controller-label" data-i18n="origin">SIGNAL ORIGIN: UNKNOWN</span>
+        </div>
+    </header>
+
+    <div class="stack" id="leaderboard">
+        </div>
+
+    <div class="dock">
+        <div class="inputs-group">
+            <input type="text" id="in-name" data-placeholder="ph_name" placeholder="YOUR ALIAS" style="flex:1">
+            <input type="number" id="in-amount" data-placeholder="ph_amount" placeholder="ETH" style="flex:0.6" step="0.001">
+        </div>
+        <input type="text" id="in-title" data-placeholder="ph_title" placeholder="OVERRIDE TITLE (IF #1)">
+        <button class="action-btn" id="main-btn" onclick="sim.executeRealTransaction()" data-i18n="btn_connect">INITIALIZE UPLINK</button>
+    </div>
+
+    <div id="story-modal" onclick="this.style.display='none'">
+        <img id="story-img">
+        <div class="close-hint" data-i18n="tap_close">[ TAP TO CLOSE ]</div>
+    </div>
+    
+    <div id="cookie-banner">
+        <span>We use cookies for Web3 connectivity.</span>
+        <button id="cookie-btn" onclick="app.acceptCookies()">ACCEPT</button>
+    </div>
+
+    <div class="footer-info">ALTARPROTOCOL v.1.0 (LIVE WEB3)</div>
+    <canvas id="cvs" width="1080" height="1920" style="display:none"></canvas>
+
+    <script src="https://unpkg.com/@formkit/auto-animate/index.min.js"></script>
+
+    <script>
+        // ==========================================
+        // ⚠️ CONFIGURAZIONE (MODIFICA QUI)
+        // ==========================================
+        const CONFIG = {
+            // IL TUO INDIRIZZO WALLET (Dove ricevi i soldi)
+            WALLET: "0x63F75cbDF27A0e4f6F2453bd075F3c10cAe729A4", 
+            
+            // IL TUO GOOGLE APPS SCRIPT URL (Quello con /exec)
+            DB_URL: "https://script.google.com/macros/s/AKfycbzctlBmZ_GP-r2B7moR3aZsmmV_2wkFf7X07g9_M6CAPzs6TIxxu8U2aBVXRAwq0o2dfQ/exec"
+        };
+
+
+        // ==========================================
+        // 1. DICTIONARY & CORE
+        // ==========================================
+        const i18n = {
+            en: {
+                origin: "LATEST SIGNAL: ",
+                unknown: "UNKNOWN",
+                btn_connect: "CONNECT WALLET",
+                btn_verify: "CHECKING WALLET...",
+                btn_sign: "SIGN TRANSACTION...",
+                btn_success: "PAYMENT SUCCESSFUL",
+                btn_error: "DATA MISSING",
+                ph_name: "YOUR ALIAS / EMAIL",
+                ph_amount: "ETH AMOUNT",
+                ph_title: "OVERRIDE TITLE (IF #1)",
+                tap_close: "[ TAP TO CLOSE ]",
+                def_title: "ALTAR READY",
+                err_meta: "METAMASK MISSING"
+            },
+            it: {
+                origin: "ULTIMO SEGNALE: ",
+                unknown: "SCONOSCIUTO",
+                btn_connect: "CONNETTI WALLET",
+                btn_verify: "VERIFICA WALLET...",
+                btn_sign: "FIRMA TRANSAZIONE...",
+                btn_success: "PAGAMENTO RIUSCITO",
+                btn_error: "DATI MANCANTI",
+                ph_name: "TUO ALIAS / EMAIL",
+                ph_amount: "IMPORTO ETH",
+                ph_title: "MESSAGGIO (OPZIONALE)",
+                tap_close: "[ TOCCA PER CHIUDERE ]",
+                def_title: "ALTAR PRONTO",
+                err_meta: "METAMASK NON TROVATO"
+            }
+        };
+
+        const app = {
+            lang: localStorage.getItem('altar_lang') || 'en',
+            theme: localStorage.getItem('altar_theme') || 'dark',
+
+            init: () => {
+                // Gestione errori per evitare "SYSTEM OFFLINE"
+                try {
+                    const saved = localStorage.getItem('altar_data');
+                    const defaults = [
+                        { name: "SATOSHI", amount: 10.0, title: "GENESIS BLOCK" },
+                        { name: "VITALIK", amount: 5.0 },
+                        { name: "WHALE_01", amount: 1.2 }
+                    ];
+                    
+                    sim.data = saved ? JSON.parse(saved) : defaults;
+                    
+                    // Attiva animazioni SOLO se la libreria esiste
+                    if (typeof autoAnimate !== 'undefined') {
+                        autoAnimate(document.getElementById('leaderboard'));
+                    }
+                    
+                    sim.render(); // Questo fa apparire i testi giusti!
+                    
+                } catch (err) {
+                    console.error("Errore avvio:", err);
+                    // Se tutto fallisce, forza almeno il titolo
+                    document.getElementById('master-title').innerText = "SYSTEM READY";
+                }
+                
+                // Controlli UI standard
+                document.documentElement.setAttribute('data-theme', app.theme);
+                if(!localStorage.getItem('cookieConsent')) {
+                    document.getElementById('cookie-banner').style.display = 'flex';
+                }
+                app.updateText();
+            },
+
+            toggleTheme: () => {
+                app.theme = app.theme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', app.theme);
+                document.getElementById('theme-icon').innerText = app.theme === 'dark' ? '☀' : '☾';
+                localStorage.setItem('altar_theme', app.theme);
+            },
+
+            toggleLang: () => {
+                app.lang = app.lang === 'en' ? 'it' : 'en';
+                document.getElementById('lang-icon').innerText = app.lang.toUpperCase();
+                localStorage.setItem('altar_lang', app.lang);
+                app.updateText();
+                sim.render();
+            },
+
+            acceptCookies: () => {
+                localStorage.setItem('cookieConsent', 'true');
+                document.getElementById('cookie-banner').style.display = 'none';
+            },
+
+            updateText: () => {
+                const dict = i18n[app.lang];
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if(key !== 'origin') el.innerText = dict[key];
+                });
+                document.querySelectorAll('[data-placeholder]').forEach(el => {
+                    const key = el.getAttribute('data-placeholder');
+                    el.placeholder = dict[key];
+                });
+                sim.render();
+            }
+        };
+
+        // ==========================================
+        // 2. SIMULATION & WEB3 LOGIC
+        // ==========================================
+        const sim = {
+            data: [],
+            
+            init: () => {
+                // Fake data iniziale per demo
+                const saved = localStorage.getItem('altar_data');
+                const defaults = [
+                    { name: "SATOSHI", amount: 10.0, title: "GENESIS BLOCK" },
+                    { name: "VITALIK", amount: 5.0 },
+                    { name: "WHALE_01", amount: 1.2 }
+                ];
+                sim.data = saved ? JSON.parse(saved) : defaults;
+                autoAnimate(document.getElementById('leaderboard'));
+                sim.render();
+            },
+
+            render: () => {
+                sim.data.sort((a,b) => b.amount - a.amount);
+                const top = sim.data[0];
+                const dict = i18n[app.lang];
+
+                // Update UI Header
+                document.getElementById('master-title').innerText = top.title || dict.def_title;
+                document.getElementById('controller-label').innerHTML = `${dict.origin} <span style="color:var(--text-main); font-weight:700">${top.name}</span>`;
+
+                // Update List
+                const list = document.getElementById('leaderboard');
+                list.innerHTML = sim.data.map((u, i) => `
+                    <div class="card ${i===0?'rank-1':''}" onclick="sim.genStory(${i+1}, '${u.name}', ${u.amount})">
+                        <div class="rank-num">${i+1}</div>
+                        <div class="info">
+                            <div class="name">${u.name}</div>
+                            <div class="amount">${u.amount.toFixed(4)} ETH</div>
+                        </div>
+                        <div style="font-size:1.2rem; opacity:${i===0?1:0.3}">${i===0?'👑':'📸'}</div>
+                    </div>
+                `).join('');
+            },
+
+            // --- FUNZIONE PAGAMENTO REALE ---
+            executeRealTransaction: async () => {
+                const nEl = document.getElementById('in-name');
+                const tEl = document.getElementById('in-title');
+                const aEl = document.getElementById('in-amount');
+                const btn = document.getElementById('main-btn');
+                const dict = i18n[app.lang];
+
+                const name = nEl.value.toUpperCase().trim();
+                const amountVal = aEl.value;
+                const title = tEl.value.toUpperCase().trim();
+
+                // Validazione
+                if(!name || !amountVal) {
+                    sim.btnFeedback(btn, dict.btn_error, "#ff3b30");
+                    return;
+                }
+                
+                if (typeof window.ethereum === 'undefined') {
+                    alert(dict.err_meta);
+                    return;
+                }
+
+                if (CONFIG.WALLET.includes("INCOLLA")) {
+                    alert("ATTENZIONE: Devi inserire il tuo wallet nel codice HTML!");
+                    return;
+                }
+
+                try {
+                    // 1. VERIFICA
+                    btn.disabled = true;
+                    btn.innerText = dict.btn_verify;
+
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await provider.send("eth_requestAccounts", []); // Richiedi account
+                    const signer = provider.getSigner();
+                    const userAddr = await signer.getAddress();
+
+                    // SALVATAGGIO "INIZIATO" (LEAD)
+                    sim.saveToDB(name, userAddr, "Iniziato", "");
+
+                    // 2. FIRMA
+                    btn.innerText = dict.btn_sign;
+                    
+                    const tx = await signer.sendTransaction({
+                        to: CONFIG.WALLET,
+                        value: ethers.utils.parseEther(amountVal.toString()) 
+                    });
+
+                    // 3. SUCCESSO
+                    const amountFloat = parseFloat(amountVal);
+                    const isKing = amountFloat > sim.data[0].amount;
+                    
+                    // Aggiungi alla lista
+                    sim.data.push({ 
+                        name: name, 
+                        amount: amountFloat, 
+                        title: (isKing && title) ? title : null 
+                    });
+                    localStorage.setItem('altar_data', JSON.stringify(sim.data));
+                    
+                    // SALVATAGGIO "PAGATO"
+                    sim.saveToDB(name, userAddr, "PAGATO", tx.hash);
+
+                    // Reset UI
+                    sim.render();
+                    nEl.value = ''; aEl.value = ''; tEl.value = '';
+                    
+                    sim.btnFeedback(btn, dict.btn_success, "var(--accent)");
+                    
+                    // Flash Effect
+                    document.body.style.background = app.theme === 'dark' ? '#111' : '#fff';
+                    setTimeout(() => document.body.style.background = '', 100);
+
+                } catch (error) {
+                    console.error(error);
+                    sim.btnFeedback(btn, "ERROR: " + (error.code || "FAIL"), "#ff3b30");
+                }
+            },
+
+            btnFeedback: (btn, text, color) => {
+                const oldText = btn.innerText;
+                btn.innerText = text;
+                btn.style.background = color;
+                
+                setTimeout(() => { 
+                    btn.disabled = false;
+                    btn.innerText = i18n[app.lang].btn_connect; 
+                    btn.style.background = "var(--text-main)"; 
+                }, 3000);
+            },
+
+            saveToDB: async (email, wallet, stato, tx) => {
+                if(CONFIG.DB_URL.includes("INCOLLA")) return;
+                try {
+                    await fetch(CONFIG.DB_URL, {
+                        method: "POST",
+                        mode: "no-cors",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: email, wallet: wallet, status: stato, tx: tx })
+                    });
+                } catch(e) { console.log("DB Error", e); }
+            },
+
+            genStory: (rank, name, amount) => {
+                // Genera immagine da condividere
+                const cvs = document.getElementById('cvs');
+                const ctx = cvs.getContext('2d');
+                ctx.fillStyle = "#000"; ctx.fillRect(0,0,1080,1920);
+                const g = ctx.createLinearGradient(0,0,0,1920);
+                g.addColorStop(0, "#00f2ff33"); g.addColorStop(1, "#000");
+                ctx.fillStyle = g; ctx.fillRect(0,0,1080,1920);
+                ctx.textAlign = "center";
+                ctx.font = "900 80px Inter"; ctx.fillStyle = "#fff";
+                ctx.fillText("ALTARPROTOCOL", 540, 400); // <-- NOME AGGIORNATO
+                ctx.font = "900 600px Inter"; ctx.fillStyle = rank===1 ? "#00f2ff" : "#333";
+                ctx.fillText(rank, 540, 1000);
+                ctx.font = "700 90px Inter"; ctx.fillStyle = "#fff";
+                ctx.fillText(name, 540, 1300);
+                ctx.font = "400 60px JetBrains Mono"; ctx.fillStyle = "#888";
+                ctx.fillText(amount.toFixed(4) + " ETH", 540, 1420);
+                document.getElementById('story-img').src = cvs.toDataURL('image/jpeg');
+                document.getElementById('story-modal').style.display = 'flex';
+            }
+        };
+
+        app.init();
+    </script>
+</body>
+</html>
