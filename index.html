@@ -3,172 +3,158 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>ALTAR | IMPERIAL</title>
+  <title>ALTAR | ETERNAL</title>
   
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=JetBrains+Mono:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div class="noise-bg"></div>
-  <div class="vignette"></div>
-  <div class="gold-ambient"></div>
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="noise-overlay"></div>
 
   <audio id="altar-audio" loop>
       <source src="altar_protocol_dark_ritual.wav" type="audio/wav">
   </audio>
 
-  <nav class="top-nav fade-in-down">
-    <div class="brand-box">
-        <div class="brand-logo glitch" data-text="ALTAR">ALTAR</div>
-        <div class="brand-sub">PROTOCOL</div>
+  <nav class="nav-bar fade-in">
+    <div class="logo-box">
+        <div class="logo-text">ALTAR</div>
+        <div class="logo-dot"></div>
     </div>
-    <div class="status-badge">
-        <span class="dot-pulse"></span> SYSTEM LIVE
+    <div class="nav-controls">
+        <button id="lang-btn" onclick="toggleLanguage()" class="btn-pill">EN</button>
+        <div class="live-pill"><span class="pulse"></span> LIVE</div>
     </div>
   </nav>
 
-  <main class="main-layout">
+  <main class="main-container">
 
-    <section class="status-deck fade-in-up delay-1">
-        <div class="deck-header">
-            <span>LIVELLO SATURAZIONE</span>
-            <span id="total-raised-display" class="gold-num">0.00€</span>
-        </div>
-        <div class="bar-frame">
-            <div class="bar-fill" id="progress-bar">
-                <div class="bar-glow"></div>
-            </div>
-        </div>
-        <div class="deck-footer">
-            <span>TARGET: 85.000€</span>
-            <span>CAPACITY: <span id="percent-display">0%</span></span>
-        </div>
-    </section>
-    
-    <section id="kingBox" class="imperial-card hero-card fade-in-up delay-2">
-      <div class="card-corner top-left"></div>
-      <div class="card-corner top-right"></div>
-      <div class="card-corner bottom-left"></div>
-      <div class="card-corner bottom-right"></div>
-
-      <div class="card-label">DOMINUS ATTUALE</div>
-      
-      <div class="king-content">
-        <h2 id="king-name" class="lux-text">NESSUNO</h2>
+    <div class="top-grid">
         
-        <div class="decree-wrapper">
-            <span class="quote-mark">“</span>
-            <span id="king-decree" class="decree-text">Il trono attende il suo Re.</span>
-            <span class="quote-mark">”</span>
+        <aside class="col-info fade-in delay-1">
+            <div class="glass-card widget-card">
+                <div class="widget-head">
+                    <span class="sub-label" data-key="saturation_level">PROTOCOL SATURATION</span>
+                    <div class="mini-chart-icon"></div>
+                </div>
+                <div class="big-value" id="total-raised-display">0.00€</div>
+                
+                <div class="progress-track-round">
+                    <div class="progress-fill-round" id="progress-bar"></div>
+                </div>
+                <div class="progress-meta">
+                    <span>TARGET: 84.000€</span>
+                    <span id="percent-display">0%</span>
+                </div>
+            </div>
+            
+            <div class="info-text-box">
+                <p data-key="info_intro">Il protocollo è attivo. L'ascesa al trono è irreversibile.</p>
+            </div>
+        </aside>
+
+        <section class="col-action fade-in delay-2">
+            
+            <div class="glass-card king-card" id="kingBox">
+                <div class="shine-effect"></div>
+                <span class="sub-label center" data-key="current_dominus">CURRENT RULER</span>
+                
+                <h1 id="king-name" class="king-title">NO ONE</h1>
+                
+                <div class="decree-box">
+                    <span class="quote-mark">“</span>
+                    <p id="king-decree">The throne is empty.</p>
+                    <span class="quote-mark right">”</span>
+                </div>
+
+                <div class="price-pill">
+                    <span data-key="tribute_paid">TRIBUTE LOCKED</span>
+                    <strong id="king-price">0.00€</strong>
+                </div>
+            </div>
+
+            <div class="control-area">
+                <div class="input-row">
+                    <input id="user-alias" type="text" class="round-input" placeholder="ALIAS">
+                    <input id="user-email" type="email" class="round-input" placeholder="EMAIL">
+                </div>
+                
+                <textarea id="user-decree" class="round-input area" maxlength="60" oninput="updateCharCount(this)" placeholder="YOUR DECREE..."></textarea>
+                <div class="char-count" id="char-count">0/60</div>
+
+                <button id="btn-ascend" onclick="handleAscension()" class="btn-cta">
+                    <span class="btn-text" data-key="btn_offer">INITIATE ASCENSION</span>
+                    <span id="next-price-display" class="btn-price">...</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <section class="history-section fade-in delay-3">
+        <div class="section-header">
+            <span class="sub-label" data-key="graveyard_title">LEDGER OF FALLEN KINGS</span>
+            <div class="line-sep"></div>
         </div>
-
-        <div class="price-tag">
-            <span>TRIBUTO VERSATO</span>
-            <span id="king-price" class="mono-gold">0.00€</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="control-panel fade-in-up delay-3">
-      
-      <div class="input-group">
-        <label>IDENTITÀ</label>
-        <input id="user-alias" type="text" placeholder="INSERISCI ALIAS" class="lux-input" autocomplete="off">
-      </div>
-      
-      <div class="input-group">
-        <label>DECRETO REALE (Max 60)</label>
-        <textarea id="user-decree" placeholder="LA TUA VOLONTÀ..." class="lux-input" maxlength="60" oninput="updateCharCount(this)"></textarea>
-        <div class="char-counter" id="char-count">0/60</div>
-      </div>
-
-      <div class="input-group">
-        <label>CANALE CRITTOGRAFATO</label>
-        <input id="user-email" type="email" placeholder="EMAIL DI CONTATTO" class="lux-input">
-      </div>
-      
-      <button id="btn-ascend" onclick="handleAscension()" class="btn-imperial">
-        <div class="btn-bg"></div>
-        <span class="btn-text">OFFRI TRIBUTO</span>
-        <span id="next-price-display" class="btn-price">...</span>
-      </button>
-    </section>
-
-    <section class="graveyard-section fade-in-up delay-4">
-      <div class="section-divider">
-          <span class="line"></span>
-          <span class="title">MEMORIA DEI CADUTI</span>
-          <span class="line"></span>
-      </div>
-      <div id="graveyard-list" class="graveyard-list">
-          <div class="loading-text">Accesso agli archivi...</div>
-      </div>
+        <div class="history-scroller" id="graveyard-list">
+            </div>
     </section>
 
   </main>
 
-  <footer class="legal-footer fade-in">
-    <p>IMPERIAL ACCESS PROTOCOL [V.2026]</p>
+  <footer class="footer-bar">
+    <div class="footer-links">
+        <button onclick="openLegal('rules')" data-key="link_rules">RULES</button>
+        <button onclick="openLegal('privacy')" data-key="link_privacy">PRIVACY</button>
+        <button onclick="openLegal('terms')" data-key="link_terms">TERMS</button>
+    </div>
+    <div class="copy-text">SECURE ENCLAVE // 2026</div>
   </footer>
 
-  <div id="cryptoModal" class="modal-overlay">
-    <div class="modal-card imperial-card">
-        <div class="modal-header">
-            <h3>PAGAMENTO CRIPTO</h3>
-            <span class="close-btn" onclick="closeCryptoModal()">×</span>
+  <div id="cryptoModal" class="modal-backdrop">
+    <div class="modal-bubble">
+        <div class="modal-top">
+            <span data-key="modal_crypto_title">TRANSFER</span>
+            <button onclick="closeCryptoModal()" class="close-round">×</button>
         </div>
-        
-        <div class="modal-body">
-            <p class="instruction">TRASFERISCI ESATTAMENTE:</p>
-            <div class="price-huge lux-text" id="modal-price-display">...</div>
+        <div class="modal-inner">
+            <div class="price-hero" id="modal-price-display">...</div>
+            <div class="qr-round"><img id="qr-image" src="" alt="QR"></div>
             
-            <div class="qr-frame">
-                <img id="qr-image" src="" alt="QR Code">
+            <div class="wallet-pill">
+                <span id="wallet-address">0x...</span>
+                <button onclick="copyAddress()" class="copy-tiny" data-key="btn_copy">COPY</button>
             </div>
 
-            <div class="wallet-box">
-                <span id="wallet-address" class="mono-gold">...</span>
-                <button onclick="copyAddress()" class="copy-btn">COPIA</button>
+            <div class="verify-row">
+                <input type="text" id="tx-hash" class="round-input" placeholder="TX HASH / ID">
+                <button onclick="submitPayment()" id="btn-confirm-payment" class="btn-cta small" data-key="btn_confirm">→</button>
             </div>
-            
-            <div class="verify-box">
-                <label>INCOLLA HASH TRANSAZIONE (TXID)</label>
-                <input type="text" id="tx-hash" placeholder="0x..." class="lux-input center-text">
-                <button id="btn-confirm-payment" onclick="submitPayment()" class="btn-imperial small-btn">CONFERMA</button>
-                <p id="payment-status" class="status-msg"></p>
-            </div>
+            <p id="payment-status" class="status-msg"></p>
         </div>
     </div>
   </div>
-<div id="cookie-banner" class="cookie-banner fade-in-up">
-    <p>Utilizziamo tecnologie crittografiche per garantire l'integrità del protocollo. <button onclick="acceptCookies()">ACCETTO</button></p>
-</div>
 
-<footer class="legal-footer fade-in">
-    <div class="footer-links">
-        <button onclick="openLegal('privacy')">PRIVACY POLICY</button>
-        <span class="sep">|</span>
-        <button onclick="openLegal('terms')">TERMINI DEL SERVIZIO</button>
-        <span class="sep">|</span>
-        <button onclick="openLegal('cookies')">COOKIE</button>
-    </div>
-    <p>IMPERIAL ACCESS PROTOCOL [V.2026] — TUTTI I DIRITTI RISERVATI</p>
-</footer>
+  <div id="legal-modal" class="modal-backdrop">
+      <div class="modal-bubble wide">
+          <div class="modal-top">
+              <span id="legal-title">INFO</span>
+              <button onclick="closeLegal()" class="close-round">×</button>
+          </div>
+          <div class="modal-body-styled" id="legal-content"></div>
+      </div>
+  </div>
 
-<div id="legal-modal" class="modal-overlay">
-    <div class="modal-card imperial-card">
-        <div class="modal-header">
-            <h3 id="legal-title">TITOLO</h3>
-            <span class="close-btn" onclick="closeLegal()">×</span>
-        </div>
-        <div id="legal-content" class="legal-text-body">
-            </div>
-    </div>
-</div>
+  <div id="cookie-banner" class="cookie-float">
+      <div class="cookie-content">
+        <span data-key="cookie_text">Local storage only.</span>
+      </div>
+      <button onclick="acceptCookies()" class="btn-accept" data-key="cookie_btn">ACCEPT</button>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
