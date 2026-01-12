@@ -1,6 +1,6 @@
 // --- CONFIGURAZIONE ---
 const CONFIG = {
-    SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwIE_1I6fnBkfOnO4NrfAHDvcmbyxRm69tTSXA5nVGMmwDgjdXGZccC4a2Y-1O01zc0cA/exec", 
+    SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzoEPfyufpCTG98tEnI1RMb1B0iM1OOjCKhi8UKfXuUN6pGOGl0QVOCV8bI7A3C5JoVZw/exec", 
     MY_WALLET: "0x63F75cbDF27A0e4f6F2453bd075F3c10cAe729A4", 
     MAX_CAP: 84000 
 };
